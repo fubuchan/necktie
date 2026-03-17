@@ -1,50 +1,466 @@
-<form id="tieForm">
-  <input id="user_name" placeholder="あなたの名前">
-  <input id="user_city" placeholder="あなたの居住地">
-  <input id="user_job" placeholder="あなたの仕事">
-  <input id="father_name" placeholder="父の名前">
-  <input id="father_city" placeholder="父の居住地">
-  <input id="father_job" placeholder="父の仕事">
-  <select id="learned_from_father">
-    <option value="yes">父に教わった</option>
-    <option value="no">父に教わっていない</option>
-  </select>
-  <input id="tie_note" placeholder="補足">
-  <button type="submit">送信</button>
-</form>
-
-<script>
-  const ws = new WebSocket("wss://necktie.onrender.com");
-
-  ws.onopen = () => {
-    console.log("🟢 WebSocket接続成功");
-  };
-
-  ws.onerror = (e) => {
-    console.log("❌ WebSocketエラー", e);
-  };
-
-  document.getElementById("tieForm").addEventListener("submit", (e) => {
-    e.preventDefault();
-
-    const payload = {
-      type: "tie_input",
-      user_name: document.getElementById("user_name").value,
-      user_city: document.getElementById("user_city").value,
-      user_job: document.getElementById("user_job").value,
-      father_name: document.getElementById("father_name").value,
-      father_city: document.getElementById("father_city").value,
-      father_job: document.getElementById("father_job").value,
-      learned_from_father: document.getElementById("learned_from_father").value,
-      tie_note: document.getElementById("tie_note").value
-    };
-
-    console.log("📤 送信:", payload);
-
-    if (ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify(payload));
-    } else {
-      console.log("⚠️ WebSocket未接続");
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>父子相伝ネクタイバトン</title>
+  <style>
+    * {
+      box-sizing: border-box;
     }
-  });
-</script>
+
+    body {
+      margin: 0;
+      padding: 32px 20px 60px;
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans",
+        "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+      background: #f7f5f2;
+      color: #222;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .lead {
+      margin: 0 0 28px;
+      color: #666;
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e7e2dc;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+      margin-bottom: 24px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field label {
+      font-size: 12px;
+      color: #666;
+    }
+
+    input,
+    select,
+    button,
+    textarea {
+      font: inherit;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #d6d0c8;
+      border-radius: 10px;
+      background: #fff;
+      color: #222;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: #b74a45;
+      box-shadow: 0 0 0 3px rgba(183, 74, 69, 0.12);
+    }
+
+    textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+
+    .full {
+      grid-column: 1 / -1;
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 18px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 12px 22px;
+      background: #b74a45;
+      color: #fff;
+      cursor: pointer;
+      font-weight: 700;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    button:hover {
+      opacity: 0.92;
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    button.secondary {
+      background: #333;
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .status {
+      font-size: 13px;
+      color: #666;
+    }
+
+    .status.ok {
+      color: #1c7a42;
+    }
+
+    .status.ng {
+      color: #b74a45;
+    }
+
+    #loading {
+      display: none;
+      margin-top: 16px;
+      font-size: 14px;
+      color: #b74a45;
+    }
+
+    #resultArea {
+      display: none;
+      animation: fadeIn 0.4s ease;
+    }
+
+    .result-header {
+      margin-bottom: 16px;
+    }
+
+    .result-label {
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      color: #888;
+      margin-bottom: 8px;
+    }
+
+    .result-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: #b74a45;
+      margin-bottom: 10px;
+    }
+
+    .result-description {
+      font-size: 14px;
+      line-height: 1.8;
+      color: #444;
+      white-space: pre-wrap;
+    }
+
+    .preview-wrap {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+      background: #f3efea;
+      border-radius: 16px;
+      padding: 20px;
+      border: 1px solid #e8e1d9;
+    }
+
+    #preview {
+      max-width: 100%;
+      width: 360px;
+      height: auto;
+      display: block;
+      border-radius: 8px;
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+      background: white;
+    }
+
+    .download-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 18px;
+      flex-wrap: wrap;
+    }
+
+    .log {
+      margin-top: 20px;
+      font-size: 12px;
+      line-height: 1.7;
+      color: #666;
+      white-space: pre-wrap;
+      background: #faf8f5;
+      border: 1px solid #ece6df;
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 820px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .result-title {
+        font-size: 22px;
+      }
+
+      #preview {
+        width: 100%;
+        max-width: 340px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>父子相伝ネクタイバトン</h1>
+    <p class="lead">
+      父の情報と自分の情報を入力すると、TouchDesignerが結び名とビジュアルを生成し、結果を返します。
+    </p>
+
+    <div class="card">
+      <form id="tieForm">
+        <div class="grid">
+          <div class="field">
+            <label for="user_name">あなたの名前</label>
+            <input id="user_name" placeholder="例：清水楓吹樹" />
+          </div>
+
+          <div class="field">
+            <label for="user_city">あなたの居住地</label>
+            <input id="user_city" placeholder="例：福岡" />
+          </div>
+
+          <div class="field">
+            <label for="user_job">あなたの仕事</label>
+            <input id="user_job" placeholder="例：会社員" />
+          </div>
+
+          <div class="field">
+            <label for="father_name">父の名前</label>
+            <input id="father_name" placeholder="例：清水" />
+          </div>
+
+          <div class="field">
+            <label for="father_city">父の居住地</label>
+            <input id="father_city" placeholder="例：広島" />
+          </div>
+
+          <div class="field">
+            <label for="father_job">父の仕事</label>
+            <input id="father_job" placeholder="例：営業職" />
+          </div>
+
+          <div class="field">
+            <label for="learned_from_father">結び方について</label>
+            <select id="learned_from_father">
+              <option value="yes">父に教わった</option>
+              <option value="no">父に教わっていない</option>
+            </select>
+          </div>
+
+          <div class="field full">
+            <label for="tie_note">補足</label>
+            <textarea id="tie_note" placeholder="例：毎朝無意識に結んでいる / 就職のときに父に教わった"></textarea>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="submit" id="submitBtn">送信して生成</button>
+          <span id="wsStatus" class="status">WebSocket接続中...</span>
+        </div>
+
+        <div id="loading">生成中です…</div>
+      </form>
+    </div>
+
+    <div class="card" id="resultArea">
+      <div class="result-header">
+        <div class="result-label">GENERATED RESULT</div>
+        <div class="result-title" id="tieName">---</div>
+        <div class="result-description" id="tieDescription">---</div>
+      </div>
+
+      <div class="preview-wrap">
+        <img id="preview" alt="生成プレビュー" />
+      </div>
+
+      <div class="download-actions">
+        <button type="button" class="secondary" id="downloadBtn">画像をダウンロード</button>
+      </div>
+
+      <div class="log" id="debugLog">まだ結果はありません。</div>
+    </div>
+  </div>
+
+  <script>
+    const WS_URL = "wss://necktie.onrender.com";
+
+    const wsStatus = document.getElementById("wsStatus");
+    const tieForm = document.getElementById("tieForm");
+    const submitBtn = document.getElementById("submitBtn");
+    const loading = document.getElementById("loading");
+    const resultArea = document.getElementById("resultArea");
+    const tieNameEl = document.getElementById("tieName");
+    const tieDescriptionEl = document.getElementById("tieDescription");
+    const previewEl = document.getElementById("preview");
+    const debugLog = document.getElementById("debugLog");
+    const downloadBtn = document.getElementById("downloadBtn");
+
+    let ws = null;
+    let lastImageSrc = "";
+
+    function log(message) {
+      console.log(message);
+      debugLog.textContent = message;
+    }
+
+    function connectWebSocket() {
+      ws = new WebSocket(WS_URL);
+
+      ws.onopen = () => {
+        console.log("🟢 WebSocket接続成功");
+        wsStatus.textContent = "接続済み";
+        wsStatus.className = "status ok";
+      };
+
+      ws.onclose = () => {
+        console.log("🔌 WebSocket切断");
+        wsStatus.textContent = "切断されました。再接続してください。";
+        wsStatus.className = "status ng";
+      };
+
+      ws.onerror = (e) => {
+        console.log("❌ WebSocketエラー", e);
+        wsStatus.textContent = "接続エラー";
+        wsStatus.className = "status ng";
+      };
+
+      ws.onmessage = (event) => {
+        console.log("📩 WebSocket受信:", event.data);
+
+        let data;
+        try {
+          data = JSON.parse(event.data);
+        } catch (err) {
+          console.error("JSON parse error:", err);
+          return;
+        }
+
+        if (data.type === "tie_result" || data.type === "tie_overlay") {
+          loading.style.display = "none";
+          submitBtn.disabled = false;
+
+          tieNameEl.textContent = data.tie_name || "無名結び";
+          tieDescriptionEl.textContent =
+            data.tie_description || "説明文がありません。";
+
+          if (data.image && data.image.trim() !== "") {
+            lastImageSrc = "data:image/png;base64," + data.image;
+            previewEl.src = lastImageSrc;
+          } else {
+            previewEl.removeAttribute("src");
+            lastImageSrc = "";
+          }
+
+          resultArea.style.display = "block";
+
+          log(
+            `結び名: ${data.tie_name || ""}\n` +
+            `説明文: ${data.tie_description || ""}\n` +
+            `user_name: ${data.user_name || ""}\n` +
+            `father_name: ${data.father_name || ""}\n` +
+            `learned_from_father: ${data.learned_from_father || ""}`
+          );
+        }
+      };
+    }
+
+    connectWebSocket();
+
+    tieForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+
+      const payload = {
+        type: "tie_input",
+        user_name: document.getElementById("user_name").value,
+        user_city: document.getElementById("user_city").value,
+        user_job: document.getElementById("user_job").value,
+        father_name: document.getElementById("father_name").value,
+        father_city: document.getElementById("father_city").value,
+        father_job: document.getElementById("father_job").value,
+        learned_from_father: document.getElementById("learned_from_father").value,
+        tie_note: document.getElementById("tie_note").value
+      };
+
+      console.log("📤 送信:", payload);
+
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        wsStatus.textContent = "未接続のため送信できません";
+        wsStatus.className = "status ng";
+        return;
+      }
+
+      loading.style.display = "block";
+      submitBtn.disabled = true;
+      resultArea.style.display = "none";
+
+      ws.send(JSON.stringify(payload));
+    });
+
+    downloadBtn.addEventListener("click", () => {
+      if (!lastImageSrc) {
+        alert("ダウンロードできる画像がまだありません。");
+        return;
+      }
+
+      const link = document.createElement("a");
+      link.href = lastImageSrc;
+      link.download = "father_tie_result.png";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+  </script>
+</body>
+</html>
