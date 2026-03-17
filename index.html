@@ -492,47 +492,34 @@
       ws.send(JSON.stringify(payload));
     });
 
-   downloadBtn.addEventListener("click", async () => {
+   downloadBtn.addEventListener("click", () => {
   const { jsPDF } = window.jspdf;
 
   if (!lastImageSrc) {
-    alert("画像がまだありません");
+    alert("ダウンロードできる画像がまだありません。");
     return;
   }
 
-  try {
-    // Imageオブジェクト作る
-    const img = new Image();
-    img.src = lastImageSrc;
+  const img = new Image();
+  img.src = lastImageSrc;
 
-    img.onload = () => {
-      // 元画像サイズ
-      const imgWidth = img.width;
-      const imgHeight = img.height;
+  img.onload = () => {
+    const imgWidth = img.naturalWidth;
+    const imgHeight = img.naturalHeight;
 
-      // PDF作成（サイズを画像に合わせる）
-      const pdf = new jsPDF({
-        orientation: imgWidth > imgHeight ? "landscape" : "portrait",
-        unit: "px",
-        format: [imgWidth, imgHeight]
-      });
+    const pdf = new jsPDF({
+      orientation: imgWidth > imgHeight ? "landscape" : "portrait",
+      unit: "px",
+      format: [imgWidth, imgHeight]
+    });
 
-      pdf.addImage(
-        lastImageSrc,
-        "PNG",
-        0,
-        0,
-        imgWidth,
-        imgHeight
-      );
+    pdf.addImage(lastImageSrc, "PNG", 0, 0, imgWidth, imgHeight);
+    pdf.save("necktie_result.pdf");
+  };
 
-      pdf.save("necktie_result.pdf");
-    };
-
-  } catch (err) {
-    console.error(err);
-    alert("PDF生成に失敗しました");
-  }
+  img.onerror = () => {
+    alert("画像の読み込みに失敗しました。");
+  };
 });
   </script>
 </body>
