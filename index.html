@@ -16,6 +16,14 @@
 <script>
   const ws = new WebSocket("wss://necktie.onrender.com");
 
+  ws.onopen = () => {
+    console.log("🟢 WebSocket接続成功");
+  };
+
+  ws.onerror = (e) => {
+    console.log("❌ WebSocketエラー", e);
+  };
+
   document.getElementById("tieForm").addEventListener("submit", (e) => {
     e.preventDefault();
 
@@ -31,7 +39,12 @@
       tie_note: document.getElementById("tie_note").value
     };
 
-    ws.send(JSON.stringify(payload));
-    console.log("送信:", payload);
+    console.log("📤 送信:", payload);
+
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(payload));
+    } else {
+      console.log("⚠️ WebSocket未接続");
+    }
   });
 </script>
