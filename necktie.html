@@ -1,0 +1,37 @@
+<form id="tieForm">
+  <input id="user_name" placeholder="あなたの名前">
+  <input id="user_city" placeholder="あなたの居住地">
+  <input id="user_job" placeholder="あなたの仕事">
+  <input id="father_name" placeholder="父の名前">
+  <input id="father_city" placeholder="父の居住地">
+  <input id="father_job" placeholder="父の仕事">
+  <select id="learned_from_father">
+    <option value="yes">父に教わった</option>
+    <option value="no">父に教わっていない</option>
+  </select>
+  <input id="tie_note" placeholder="補足">
+  <button type="submit">送信</button>
+</form>
+
+<script>
+  const ws = new WebSocket("wss://okoge.onrender.com");
+
+  document.getElementById("tieForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    const payload = {
+      type: "tie_input",
+      user_name: document.getElementById("user_name").value,
+      user_city: document.getElementById("user_city").value,
+      user_job: document.getElementById("user_job").value,
+      father_name: document.getElementById("father_name").value,
+      father_city: document.getElementById("father_city").value,
+      father_job: document.getElementById("father_job").value,
+      learned_from_father: document.getElementById("learned_from_father").value,
+      tie_note: document.getElementById("tie_note").value
+    };
+
+    ws.send(JSON.stringify(payload));
+    console.log("送信:", payload);
+  });
+</script>
