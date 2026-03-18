@@ -5,8 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>父子相伝ネクタイバトン</title>
 
-  <!-- PDF生成用 -->
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
   <style>
@@ -38,7 +36,7 @@
     }
 
     .lead {
-      margin: 0 0 20px;
+      margin: 0 0 18px;
       color: #666;
       font-size: 13px;
       line-height: 1.7;
@@ -53,6 +51,29 @@
       margin-bottom: 16px;
     }
 
+    .step-indicator {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .step-pill {
+      flex: 1;
+      text-align: center;
+      font-size: 11px;
+      padding: 8px 0;
+      border-radius: 999px;
+      background: #ece7e0;
+      color: #8b8177;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
+    .step-pill.active {
+      background: #b74a45;
+      color: #fff;
+    }
+
     .section-label {
       margin: 0 0 12px;
       font-size: 11px;
@@ -63,10 +84,6 @@
 
     .field {
       margin-bottom: 12px;
-    }
-
-    .field:last-child {
-      margin-bottom: 0;
     }
 
     .field label {
@@ -115,6 +132,15 @@
       margin-top: 16px;
     }
 
+    .row-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    .row-buttons button {
+      flex: 1;
+    }
+
     button {
       width: 100%;
       border: none;
@@ -127,16 +153,13 @@
       transition: opacity 0.2s ease, transform 0.2s ease;
     }
 
-    button:hover {
-      opacity: 0.94;
-    }
-
-    button:active {
-      transform: translateY(1px);
-    }
-
     button.secondary {
       background: #2f2f2f;
+    }
+
+    button.ghost {
+      background: #ece7e0;
+      color: #5d554f;
     }
 
     button:disabled {
@@ -158,6 +181,15 @@
       color: #b74a45;
     }
 
+    .screen {
+      display: none;
+    }
+
+    .screen.active {
+      display: block;
+      animation: fadeIn 0.25s ease;
+    }
+
     #loading {
       display: none;
       margin-top: 10px;
@@ -166,21 +198,75 @@
       color: #b74a45;
     }
 
-    #resultArea {
-      display: none;
-      animation: fadeIn 0.35s ease;
+    .camera-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 3 / 4;
+      background: #111;
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    .result-capture {
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: #111;
+    }
+
+    .guide-box {
+      position: absolute;
+      width: 52%;
+      height: 56%;
+      border: 2px dashed rgba(255,255,255,0.85);
+      border-radius: 12px;
+      left: 50%;
+      top: 52%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .guide-text {
+      margin-top: 12px;
+      font-size: 12px;
+      color: #666;
+      line-height: 1.7;
+      text-align: center;
+    }
+
+    .capture-preview-wrap {
+      margin-top: 14px;
+      display: none;
+    }
+
+    .capture-preview-wrap.show {
+      display: block;
+    }
+
+    .capture-preview {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid #e7dfd8;
+      display: block;
+    }
+
+    .result-area {
+      display: none;
+    }
+
+    .result-area.show {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .result-card {
       background: #fff;
       border: 1px solid #e9e2da;
       border-radius: 18px;
       padding: 18px 16px 20px;
-    }
-
-    .result-top {
-      text-align: center;
-      margin-bottom: 14px;
     }
 
     .result-mini {
@@ -189,15 +275,16 @@
       letter-spacing: 0.08em;
       margin-bottom: 10px;
       font-weight: 700;
+      text-align: center;
     }
 
     .result-title {
-      font-size: 28px;
+      font-size: 30px;
       line-height: 1.4;
       font-weight: 700;
       color: #b74a45;
       margin: 0 0 10px;
-      word-break: keep-all;
+      text-align: center;
     }
 
     .result-description {
@@ -206,10 +293,10 @@
       color: #444;
       white-space: pre-wrap;
       text-align: center;
+      margin-bottom: 16px;
     }
 
     .preview-wrap {
-      margin-top: 16px;
       background: #f4f0eb;
       border-radius: 14px;
       padding: 14px;
@@ -220,14 +307,14 @@
       border: 1px solid #ece5de;
     }
 
-    #preview {
+    #resultPreview {
       width: 100%;
       max-width: 320px;
       height: auto;
       display: block;
       border-radius: 8px;
       background: #fff;
-      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.08);
     }
 
     .result-meta {
@@ -238,10 +325,6 @@
       line-height: 1.8;
       color: #666;
       text-align: center;
-    }
-
-    .download-actions {
-      margin-top: 14px;
     }
 
     .debug {
@@ -257,30 +340,13 @@
       word-break: break-word;
     }
 
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(6px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+    canvas {
+      display: none;
     }
 
-    @media (min-width: 768px) {
-      .page {
-        max-width: 520px;
-        padding-top: 28px;
-      }
-
-      .title {
-        font-size: 28px;
-      }
-
-      .result-title {
-        font-size: 32px;
-      }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
@@ -288,10 +354,17 @@
   <main class="page">
     <h1 class="title">父子相伝ネクタイバトン</h1>
     <p class="lead">
-      父の情報と自分の情報を入力すると、TouchDesignerが結び名とビジュアルを生成します。
+      父の情報と自分の情報を入力し、ネクタイを撮影すると、TouchDesignerが結び名とビジュアルを生成します。
     </p>
 
-    <section class="card">
+    <div class="step-indicator">
+      <div class="step-pill active" id="pill1">STEP 1 入力</div>
+      <div class="step-pill" id="pill2">STEP 2 撮影</div>
+      <div class="step-pill" id="pill3">STEP 3 結果</div>
+    </div>
+
+    <!-- STEP 1 -->
+    <section class="card screen active" id="screen1">
       <p class="section-label">INPUT</p>
 
       <form id="tieForm">
@@ -339,33 +412,59 @@
         </div>
 
         <div class="button-wrap">
-          <button type="submit" id="submitBtn">生成する</button>
+          <button type="button" id="goToCameraBtn">次へ</button>
           <div id="wsStatus" class="status">WebSocket接続中...</div>
         </div>
-
-        <div id="loading">生成中です…</div>
       </form>
     </section>
 
-    <section id="resultArea">
-      <div id="captureArea" class="result-capture">
-        <div class="result-top">
-          <div class="result-mini">FATHER'S DAY RESULT</div>
-          <h2 class="result-title" id="tieName">---</h2>
-          <div class="result-description" id="tieDescription">---</div>
-        </div>
+    <!-- STEP 2 -->
+    <section class="card screen" id="screen2">
+      <p class="section-label">CAPTURE</p>
 
-        <div class="preview-wrap">
-          <img id="preview" alt="生成プレビュー" />
-        </div>
-
-        <div class="result-meta" id="resultMeta">
-          ---
-        </div>
+      <div class="camera-wrap">
+        <video id="camera" autoplay playsinline muted></video>
+        <div class="guide-box"></div>
       </div>
 
-      <div class="download-actions">
+      <p class="guide-text">
+        首元とネクタイの結び目が、ガイドの中央に入るように合わせてください。
+      </p>
+
+      <div class="capture-preview-wrap" id="capturePreviewWrap">
+        <img id="capturePreview" class="capture-preview" alt="撮影プレビュー" />
+      </div>
+
+      <canvas id="captureCanvas"></canvas>
+
+      <div class="button-wrap">
+        <div class="row-buttons">
+          <button type="button" class="ghost" id="backToFormBtn">戻る</button>
+          <button type="button" id="captureBtn">撮影する</button>
+        </div>
+        <button type="button" class="secondary" id="sendBtn" disabled>この写真で生成する</button>
+      </div>
+
+      <div id="loading">生成中です…</div>
+    </section>
+
+    <!-- STEP 3 -->
+    <section class="result-area" id="resultArea">
+      <div class="result-card">
+        <div class="result-mini">FATHER'S DAY RESULT</div>
+        <h2 class="result-title" id="tieName">---</h2>
+        <div class="result-description" id="tieDescription">---</div>
+
+        <div class="preview-wrap">
+          <img id="resultPreview" alt="生成プレビュー" />
+        </div>
+
+        <div class="result-meta" id="resultMeta">---</div>
+      </div>
+
+      <div class="button-wrap">
         <button type="button" class="secondary" id="downloadBtn">PDFをダウンロード</button>
+        <button type="button" class="ghost" id="restartBtn">もう一度やる</button>
       </div>
 
       <div class="debug" id="debugLog">まだ結果はありません。</div>
@@ -375,22 +474,60 @@
   <script>
     const WS_URL = "wss://necktie.onrender.com";
 
-    const tieForm = document.getElementById("tieForm");
-    const submitBtn = document.getElementById("submitBtn");
+    const screen1 = document.getElementById("screen1");
+    const screen2 = document.getElementById("screen2");
+    const resultArea = document.getElementById("resultArea");
+
+    const pill1 = document.getElementById("pill1");
+    const pill2 = document.getElementById("pill2");
+    const pill3 = document.getElementById("pill3");
+
     const wsStatus = document.getElementById("wsStatus");
     const loading = document.getElementById("loading");
 
-    const resultArea = document.getElementById("resultArea");
-    const captureArea = document.getElementById("captureArea");
-    const tieNameEl = document.getElementById("tieName");
-    const tieDescriptionEl = document.getElementById("tieDescription");
-    const previewEl = document.getElementById("preview");
-    const resultMeta = document.getElementById("resultMeta");
-    const debugLog = document.getElementById("debugLog");
+    const goToCameraBtn = document.getElementById("goToCameraBtn");
+    const backToFormBtn = document.getElementById("backToFormBtn");
+    const captureBtn = document.getElementById("captureBtn");
+    const sendBtn = document.getElementById("sendBtn");
+    const restartBtn = document.getElementById("restartBtn");
     const downloadBtn = document.getElementById("downloadBtn");
 
+    const camera = document.getElementById("camera");
+    const captureCanvas = document.getElementById("captureCanvas");
+    const capturePreviewWrap = document.getElementById("capturePreviewWrap");
+    const capturePreview = document.getElementById("capturePreview");
+
+    const tieNameEl = document.getElementById("tieName");
+    const tieDescriptionEl = document.getElementById("tieDescription");
+    const resultPreview = document.getElementById("resultPreview");
+    const resultMeta = document.getElementById("resultMeta");
+    const debugLog = document.getElementById("debugLog");
+
     let ws = null;
+    let mediaStream = null;
+    let capturedImage = "";
     let lastImageSrc = "";
+
+    function setStep(step) {
+      screen1.classList.remove("active");
+      screen2.classList.remove("active");
+      resultArea.classList.remove("show");
+
+      pill1.classList.remove("active");
+      pill2.classList.remove("active");
+      pill3.classList.remove("active");
+
+      if (step === 1) {
+        screen1.classList.add("active");
+        pill1.classList.add("active");
+      } else if (step === 2) {
+        screen2.classList.add("active");
+        pill2.classList.add("active");
+      } else if (step === 3) {
+        resultArea.classList.add("show");
+        pill3.classList.add("active");
+      }
+    }
 
     function updateStatus(text, type = "") {
       wsStatus.textContent = text;
@@ -400,25 +537,38 @@
 
     function setLoading(isLoading) {
       loading.style.display = isLoading ? "block" : "none";
-      submitBtn.disabled = isLoading;
+      sendBtn.disabled = isLoading || !capturedImage;
+    }
+
+    function getFormData() {
+      return {
+        user_name: document.getElementById("user_name").value,
+        user_city: document.getElementById("user_city").value,
+        user_job: document.getElementById("user_job").value,
+        father_name: document.getElementById("father_name").value,
+        father_city: document.getElementById("father_city").value,
+        father_job: document.getElementById("father_job").value,
+        learned_from_father: document.getElementById("learned_from_father").value,
+        tie_note: document.getElementById("tie_note").value
+      };
     }
 
     function connectWebSocket() {
       ws = new WebSocket(WS_URL);
 
       ws.onopen = () => {
-        console.log("🟢 WebSocket接続成功");
         updateStatus("接続済み", "ok");
+        console.log("🟢 WebSocket接続成功");
       };
 
       ws.onclose = () => {
-        console.log("🔌 WebSocket切断");
         updateStatus("切断されました", "ng");
+        console.log("🔌 WebSocket切断");
       };
 
       ws.onerror = (e) => {
-        console.log("❌ WebSocketエラー", e);
         updateStatus("接続エラー", "ng");
+        console.log("❌ WebSocketエラー", e);
       };
 
       ws.onmessage = (event) => {
@@ -436,15 +586,14 @@
           setLoading(false);
 
           tieNameEl.textContent = data.tie_name || "無名結び";
-          tieDescriptionEl.textContent =
-            data.tie_description || "説明文がありません。";
+          tieDescriptionEl.textContent = data.tie_description || "説明文がありません。";
 
           if (data.image && data.image.trim() !== "") {
             lastImageSrc = "data:image/png;base64," + data.image;
-            previewEl.src = lastImageSrc;
+            resultPreview.src = lastImageSrc;
           } else {
-            lastImageSrc = "";
-            previewEl.removeAttribute("src");
+            lastImageSrc = capturedImage || "";
+            resultPreview.src = lastImageSrc;
           }
 
           resultMeta.textContent =
@@ -457,70 +606,135 @@
             `father_name: ${data.father_name || ""}\n` +
             `learned_from_father: ${data.learned_from_father || ""}`;
 
-          resultArea.style.display = "block";
-          resultArea.scrollIntoView({ behavior: "smooth", block: "start" });
+          stopCamera();
+          setStep(3);
         }
       };
     }
 
-    connectWebSocket();
+    async function startCamera() {
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user" },
+          audio: false
+        });
+        camera.srcObject = mediaStream;
+      } catch (err) {
+        alert("カメラを起動できませんでした。ブラウザのカメラ許可を確認してください。");
+        console.error(err);
+      }
+    }
 
-    tieForm.addEventListener("submit", (e) => {
-      e.preventDefault();
+    function stopCamera() {
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(track => track.stop());
+        mediaStream = null;
+      }
+      camera.srcObject = null;
+    }
 
-      const payload = {
-        type: "tie_input",
-        user_name: document.getElementById("user_name").value,
-        user_city: document.getElementById("user_city").value,
-        user_job: document.getElementById("user_job").value,
-        father_name: document.getElementById("father_name").value,
-        father_city: document.getElementById("father_city").value,
-        father_job: document.getElementById("father_job").value,
-        learned_from_father: document.getElementById("learned_from_father").value,
-        tie_note: document.getElementById("tie_note").value
-      };
+    function captureImageFromVideo() {
+      const videoWidth = camera.videoWidth;
+      const videoHeight = camera.videoHeight;
 
-      console.log("📤 送信:", payload);
+      if (!videoWidth || !videoHeight) {
+        alert("カメラ映像がまだ準備できていません。");
+        return;
+      }
 
+      captureCanvas.width = videoWidth;
+      captureCanvas.height = videoHeight;
+
+      const ctx = captureCanvas.getContext("2d");
+      ctx.drawImage(camera, 0, 0, videoWidth, videoHeight);
+
+      capturedImage = captureCanvas.toDataURL("image/png");
+      capturePreview.src = capturedImage;
+      capturePreviewWrap.classList.add("show");
+      sendBtn.disabled = false;
+    }
+
+    function sendFormAndImage() {
       if (!ws || ws.readyState !== WebSocket.OPEN) {
         updateStatus("未接続のため送信できません", "ng");
         return;
       }
 
-      resultArea.style.display = "none";
+      if (!capturedImage) {
+        alert("先にネクタイを撮影してください。");
+        return;
+      }
+
+      const payload = {
+        type: "tie_input_with_image",
+        ...getFormData(),
+        captured_image: capturedImage
+      };
+
+      console.log("📤 送信:", payload);
+
       setLoading(true);
       ws.send(JSON.stringify(payload));
+    }
+
+    goToCameraBtn.addEventListener("click", async () => {
+      setStep(2);
+      await startCamera();
     });
 
-   downloadBtn.addEventListener("click", () => {
-  const { jsPDF } = window.jspdf;
-
-  if (!lastImageSrc) {
-    alert("ダウンロードできる画像がまだありません。");
-    return;
-  }
-
-  const img = new Image();
-  img.src = lastImageSrc;
-
-  img.onload = () => {
-    const imgWidth = img.naturalWidth;
-    const imgHeight = img.naturalHeight;
-
-    const pdf = new jsPDF({
-      orientation: imgWidth > imgHeight ? "landscape" : "portrait",
-      unit: "px",
-      format: [imgWidth, imgHeight]
+    backToFormBtn.addEventListener("click", () => {
+      stopCamera();
+      setStep(1);
     });
 
-    pdf.addImage(lastImageSrc, "PNG", 0, 0, imgWidth, imgHeight);
-    pdf.save("necktie_result.pdf");
-  };
+    captureBtn.addEventListener("click", () => {
+      captureImageFromVideo();
+    });
 
-  img.onerror = () => {
-    alert("画像の読み込みに失敗しました。");
-  };
-});
+    sendBtn.addEventListener("click", () => {
+      sendFormAndImage();
+    });
+
+    restartBtn.addEventListener("click", async () => {
+      capturedImage = "";
+      lastImageSrc = "";
+      capturePreviewWrap.classList.remove("show");
+      capturePreview.removeAttribute("src");
+      resultPreview.removeAttribute("src");
+      setStep(1);
+    });
+
+    downloadBtn.addEventListener("click", () => {
+      const { jsPDF } = window.jspdf;
+
+      if (!lastImageSrc) {
+        alert("ダウンロードできる画像がまだありません。");
+        return;
+      }
+
+      const img = new Image();
+      img.src = lastImageSrc;
+
+      img.onload = () => {
+        const imgWidth = img.naturalWidth;
+        const imgHeight = img.naturalHeight;
+
+        const pdf = new jsPDF({
+          orientation: imgWidth > imgHeight ? "landscape" : "portrait",
+          unit: "px",
+          format: [imgWidth, imgHeight]
+        });
+
+        pdf.addImage(lastImageSrc, "PNG", 0, 0, imgWidth, imgHeight);
+        pdf.save("necktie_result.pdf");
+      };
+
+      img.onerror = () => {
+        alert("画像の読み込みに失敗しました。");
+      };
+    });
+
+    connectWebSocket();
   </script>
 </body>
 </html>
