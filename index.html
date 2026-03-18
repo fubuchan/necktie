@@ -671,7 +671,10 @@
         captured_image: capturedImage
       };
 
-      console.log("📤 送信:", payload);
+      console.log("📤 送信:", {
+  ...payload,
+  captured_image: payload.captured_image ? `[base64 ${payload.captured_image.length} chars]` : ""
+});
 
       setLoading(true);
       ws.send(JSON.stringify(payload));
